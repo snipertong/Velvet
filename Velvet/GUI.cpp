@@ -2,6 +2,7 @@
 
 #include "Scene.hpp"
 #include "VtEngine.hpp"
+#include "Resource.hpp"
 
 using namespace Velvet;
 
@@ -217,17 +218,17 @@ struct PerformanceStat
 	{
 		if (ImGui::BeginTable("stat", 2, ImGuiTableFlags_SizingStretchProp))
 		{
-			ImGui::TableNextColumn(); ImGui::Text("Render Frame: ");
+			ImGui::TableNextColumn(); ImGui::Text("渲染帧数: ");
 			ImGui::TableNextColumn(); ImGui::Text("%d", frameCount);
-			ImGui::TableNextColumn(); ImGui::Text("Physics Frame: ");
+			ImGui::TableNextColumn(); ImGui::Text("物理帧数: ");
 			ImGui::TableNextColumn(); ImGui::Text("%d", physicsFrameCount);
-			ImGui::TableNextColumn(); ImGui::Text("Render FrameRate: ");
+			ImGui::TableNextColumn(); ImGui::Text("渲染帧率: ");
 			ImGui::TableNextColumn(); ImGui::Text("%d FPS", frameRate);
-			ImGui::TableNextColumn(); ImGui::Text("CPU time: ");
+			ImGui::TableNextColumn(); ImGui::Text("CPU 耗时: ");
 			ImGui::TableNextColumn(); ImGui::Text("%.2f ms", cpuTime);
-			ImGui::TableNextColumn(); ImGui::Text("GPU time: "); 
+			ImGui::TableNextColumn(); ImGui::Text("GPU 耗时: "); 
 			ImGui::TableNextColumn(); ImGui::Text("%.2f ms", gpuTime); HelpMarker("gpu_time = solver_time + cuda_synchronize_time");
-			ImGui::TableNextColumn(); ImGui::Text("Num Particles: ");
+			ImGui::TableNextColumn(); ImGui::Text("粒子数量: ");
 			ImGui::TableNextColumn(); ImGui::Text("%d", Global::simParams.numParticles);
 			ImGui::EndTable();
 		}
@@ -270,7 +271,13 @@ GUI::GUI(GLFWwindow* window)
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.IniFilename = NULL;
-	io.Fonts->AddFontFromFileTTF("Assets/DroidSans.ttf", 19);
+	
+	// 注释掉原有的英文字体
+	// io.Fonts->AddFontFromFileTTF("Assets/DroidSans.ttf", 19);
+	
+	// 加载 Windows 系统的微软雅黑，字号 18，并显式声明加载完整的中文编码范围
+	io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msyh.ttc", 18.0f, NULL, io.Fonts->GetGlyphRangesChineseFull());
+	
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -350,7 +357,7 @@ void GUI::ShowSceneWindow()
 {
 	ImGui::SetNextWindowSize(ImVec2(k_leftWindowWidth, (m_canvasHeight - 60.0f) * 0.4f));
 	ImGui::SetNextWindowPos(ImVec2(20, 20));
-	ImGui::Begin("Scene", NULL, k_windowFlags);
+	ImGui::Begin("场景", NULL, k_windowFlags);
 
 	const auto& scenes = Global::engine->scenes;
 
@@ -371,11 +378,11 @@ void GUI::ShowOptionWindow()
 {
 	ImGui::SetNextWindowSize(ImVec2(k_leftWindowWidth, (m_canvasHeight - 60.0f) * 0.6f));
 	ImGui::SetNextWindowPos(ImVec2(20, 40 + (m_canvasHeight - 60.0f) * 0.4f));
-	ImGui::Begin("Options", NULL, k_windowFlags);
+	ImGui::Begin("控制选项", NULL, k_windowFlags);
 
 	ImGui::PushItemWidth(-FLT_MIN);
 
-	if (ImGui::Button("Reset (R)", ImVec2(-FLT_MIN, 0)))
+	if (ImGui::Button("重置 (R)", ImVec2(-FLT_MIN, 0)))
 	{
 		Global::engine->Reset();
 	}
@@ -383,11 +390,11 @@ void GUI::ShowOptionWindow()
 
 	{
 		static bool radio = false;
-		ImGui::Checkbox("Pause (P, O)", &Global::gameState.pause);
+		ImGui::Checkbox("暂停 (P, O)", &Global::gameState.pause);
 		Global::input->ToggleOnKeyDown(GLFW_KEY_P, Global::gameState.pause);
-		ImGui::Checkbox("Draw Particles (K)", &Global::gameState.drawParticles);
+		ImGui::Checkbox("绘制粒子 (K)", &Global::gameState.drawParticles);
 		Global::input->ToggleOnKeyDown(GLFW_KEY_K, Global::gameState.drawParticles);
-		ImGui::Checkbox("Draw Wireframe (L)", &Global::gameState.renderWireframe);
+		ImGui::Checkbox("绘制线框 (L)", &Global::gameState.renderWireframe);
 		Global::input->ToggleOnKeyDown(GLFW_KEY_L, Global::gameState.renderWireframe);
 		ImGui::Dummy(ImVec2(0.0f, 10.0f));
 	}

@@ -2,6 +2,7 @@
 
 #include <unordered_set>
 
+#include <fmt/ranges.h>
 #include <glm/glm.hpp>
 
 #include "VtBuffer.hpp"

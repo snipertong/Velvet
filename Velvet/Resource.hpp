@@ -3,6 +3,8 @@
 #include <iostream>
 #include <unordered_map>
 #include <string>
+#include <array>
+#include <filesystem>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -33,10 +35,12 @@ namespace Velvet
 			textureCache[path] = textureID;
 
             int width, height, nrComponents;
-            unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrComponents, 0);
+			string resolvedPath = ResolveExistingPath(path);
+            unsigned char* data = stbi_load(resolvedPath.c_str(), &width, &height, &nrComponents, 0);
 			if (data == nullptr)
 			{
-				data = stbi_load((defaultTexturePath+path).c_str(), &width, &height, &nrComponents, 0);
+				resolvedPath = ResolveExistingPath(defaultTexturePath + path);
+				data = stbi_load(resolvedPath.c_str(), &width, &height, &nrComponents, 0);
 			}
             if (data)
             {
@@ -87,11 +91,11 @@ namespace Velvet
 			vector<unsigned int> indices;
 
 			Assimp::Importer importer;
-			const aiScene* scene = importer.ReadFile(defaultMeshPath + path, aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+			const aiScene* scene = importer.ReadFile(ResolveExistingPath(defaultMeshPath + path), aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 			// check for errors
 			if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
 			{
-				scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+				scene = importer.ReadFile(ResolveExistingPath(path), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
 				if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
 				{	
@@ -190,7 +194,7 @@ namespace Velvet
 			try
 			{
 				// open files
-				file.open(path);
+				file.open(ResolveExistingPath(path));
 				std::stringstream vShaderStream;
 				// read file's buffer contents into streams
 				vShaderStream << file.rdbuf();
@@ -205,6 +209,35 @@ namespace Velvet
 				//std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ: " << e.what() << std::endl;
 			}
 			return code;
+		}
+
+		static string ResolveExistingPath(const string& path)
+		{
+			const std::filesystem::path input(path);
+			if (std::filesystem::exists(input))
+			{
+				return input.string();
+			}
+
+			static const std::array<std::filesystem::path, 6> searchRoots = {
+				"Velvet",
+				"..\\Velvet",
+				"..\\..\\Velvet",
+				"..\\..\\..\\Velvet",
+				"..",
+				"..\\.."
+			};
+
+			for (const auto& root : searchRoots)
+			{
+				const auto candidate = root / input;
+				if (std::filesystem::exists(candidate))
+				{
+					return candidate.string();
+				}
+			}
+
+			return path;
 		}
 
 		static void ClearCache()
